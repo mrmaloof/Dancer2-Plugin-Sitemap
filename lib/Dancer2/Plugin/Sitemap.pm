@@ -101,13 +101,16 @@ sub _get_urls {
     }
 
     if ( $app->config->{plugins}->{Sitemap}->{exclude_patterns} ) {
-        for my $path ( keys %$paths ) {
+        PATH: for my $path ( keys %$paths ) {
             for my $pattern ( @{ $app->config->{plugins}->{Sitemap}->{exclude_patterns} } ) {
-                delete $paths->{$path} if $path =~ /$pattern/;
+                print STDERR qq{\n$path =~ /$pattern/ -> } . $path =~ /$pattern/ . qq{\n};
+                if ( $path =~ /$pattern/ ) {
+                    delete $paths->{$path};
+                    next PATH;
+                }
             }
         }
     }
-
     [ map { $uri_base . $_ } sort keys %$paths ];
 }
 
