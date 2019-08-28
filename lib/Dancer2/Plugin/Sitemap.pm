@@ -24,9 +24,11 @@ Dancer2::Plugin::Sitemap
 
 This plugin adds the route /sitemap.xml. The sitemap.xml informs search engines about the URLs available for crawling.
 
-The sitemap will contain URLs for the get routes of the application. Routes containg '*', ':' are ignored. Routes ending in '.json' are ignored.
+The sitemap will contain URLs for the get routes of the application. Routes containg '*', ':' are ignored. Routes
+ending in '.json' are ignored.
 
-A request will be made to /robots.txt in the same uri_base as the sitemap. If found, the rules contained will be consulted for excluding URLs from the sitemap.
+A request will be made to /robots.txt in the same uri_base as the sitemap. If found, the rules contained will be
+consulted for excluding URLs from the sitemap.
  
 =cut
 
@@ -41,7 +43,7 @@ sub BUILD {
 
             $app->response->content_type('xml');
 
-            my $xml = XML::Writer->new( OUTPUT => 'self' );
+            my $xml = XML::Writer->new( OUTPUT => 'self', DATA_MODE => 1, DATA_INDENT => 2 );
             $xml->xmlDecl('UTF-8');
             $xml->startTag( 'urlset', 'xmlns' => 'http://www.sitemaps.org/schemas/sitemap/0.9' );
             for my $url ( @{ _get_urls($app) } ) {
@@ -66,10 +68,11 @@ sub _get_urls {
     my $uri_base   = $app->request->uri_base;
     my $rules      = WWW::RobotRules->new;
     my $robots_url = qq{$uri_base/robots.txt};
-    my $res = HTTP::Tiny->new->get($robots_url);
+    my $res        = HTTP::Tiny->new->get($robots_url);
     $rules->parse( $robots_url, $res->{content} ) if $res->{success};
 
     my $paths = {};
+    map { $paths->{$_} = 1 } @{ $app->config->{plugins}->{Sitemap}->{additional_routes} };
     for my $route ( @{ $app->routes->{get} } ) {
         my $path = $route->{spec_route};
         next if $path eq '/sitemap.xml';
@@ -84,6 +87,22 @@ sub _get_urls {
 }
 
 1;
+
+=head1 CONFIGURATION
+
+    plugins:
+        Sitemap:
+            additional_routes:
+                - /route1
+                - /route2
+
+=over
+
+=item additional_routes
+
+Use to add routes to the sitemap.xml the plugin will not find on its own.
+
+=back
 
 =head1 SEE ALSO
 
