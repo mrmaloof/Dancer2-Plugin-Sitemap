@@ -31,6 +31,9 @@ __DATA__
     <loc>http://localhost/foo</loc>
   </url>
   <url>
+    <loc>http://localhost/hello</loc>
+  </url>
+  <url>
     <loc>http://localhost/prefix-foo/</loc>
   </url>
   <url>

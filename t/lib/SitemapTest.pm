@@ -2,7 +2,8 @@ package SitemapTest;
 use Dancer2;
 use Dancer2::Plugin::Sitemap;
 
-set plugins => { Sitemap => { additional_routes => [ '/pricing/basic', '/pricing/premium' ] } };
+set plugins => { Sitemap =>
+        { additional_routes => [ '/pricing/basic', '/pricing/premium' ], add_from_views => 1 } };
 
 get '/'          => sub { };
 get '/foo'       => sub { };

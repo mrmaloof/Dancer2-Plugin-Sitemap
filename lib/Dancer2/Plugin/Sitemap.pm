@@ -3,6 +3,7 @@ package Dancer2::Plugin::Sitemap;
 # ABSTRACT: Dancer2-Plugin-Sitemap
 use strict;
 use warnings;
+use File::Find;
 use HTTP::Tiny;
 use WWW::RobotRules;
 use XML::Writer;
@@ -73,6 +74,21 @@ sub _get_urls {
 
     my $paths = {};
     map { $paths->{$_} = 1 } @{ $app->config->{plugins}->{Sitemap}->{additional_routes} };
+
+    if ( $app->config->{plugins}->{Sitemap}->{add_from_views} ) {
+        my $views_dir  = $app->config->{views};
+        my $layout_dir = $views_dir . '/' . $app->engine('template')->{layout_dir};
+        my $ext        = $app->engine('template')->{default_tmpl_ext};
+        find(
+            sub {
+                return unless /\.$ext$/;
+                return if $File::Find::name =~ /^$layout_dir/;
+				(my $path = $File::Find::name) =~ s/$views_dir(.*)\.$ext/$1/;
+                $paths->{$path}=1;
+            },
+            $views_dir
+        );
+    }
     for my $route ( @{ $app->routes->{get} } ) {
         my $path = $route->{spec_route};
         next if $path eq '/sitemap.xml';
@@ -95,12 +111,18 @@ sub _get_urls {
             additional_routes:
                 - /route1
                 - /route2
+            add_from_views: 1
 
 =over
 
 =item additional_routes
 
 Use to add routes to the sitemap.xml the plugin will not find on its own.
+
+=item add_from_views
+
+If this option is set the views directory will be scanned and routes will be included for each view. This is useful if
+you have auto_page set for your app and you would like these pages included in your sitemap.
 
 =back
 
