@@ -81,10 +81,11 @@ sub _get_urls {
         my $ext        = $app->engine('template')->{default_tmpl_ext};
         find(
             sub {
+                return if /^404/;
                 return unless /\.$ext$/;
                 return if $File::Find::name =~ /^$layout_dir/;
-				(my $path = $File::Find::name) =~ s/$views_dir(.*)\.$ext/$1/;
-                $paths->{$path}=1;
+                ( my $path = $File::Find::name ) =~ s/$views_dir(.*)\.$ext/$1/;
+                $paths->{$path} = 1;
             },
             $views_dir
         );
@@ -97,6 +98,14 @@ sub _get_urls {
         next unless $rules->allowed( $uri_base . $path );
 
         $paths->{$path} = 1;
+    }
+
+    if ( $app->config->{plugins}->{Sitemap}->{exclude_patterns} ) {
+        for my $path ( keys %$paths ) {
+            for my $pattern ( @{ $app->config->{plugins}->{Sitemap}->{exclude_patterns} } ) {
+                delete $paths->{$path} if $path =~ /$pattern/;
+            }
+        }
     }
 
     [ map { $uri_base . $_ } sort keys %$paths ];
@@ -112,6 +121,8 @@ sub _get_urls {
                 - /route1
                 - /route2
             add_from_views: 1
+            exclude_patterns:
+                - /components
 
 =over
 
